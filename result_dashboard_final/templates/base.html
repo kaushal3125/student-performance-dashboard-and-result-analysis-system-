@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Result Hub — Hi-Tech Student Analytics">
+    <title>{% block title %}Result Analysis Dashboard{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #05050a;
+            --bg-panel: rgba(12, 16, 28, 0.75);
+            --neon-cyan: #00f3ff;
+            --neon-purple: #b500ff;
+            --neon-green: #00ff9d;
+            --neon-red: #ff0055;
+            --neon-yellow: #fcee0a;
+            
+            --text-main: #e0e6ed;
+            --text-muted: #8a96a8;
+            --border-glow: rgba(0, 243, 255, 0.2);
+            --border-solid: rgba(0, 243, 255, 0.1);
+            
+            --sidebar-w: 260px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            background-position: center center;
+            color: var(--text-main);
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        h1, h2, h3, h4, h5, h6, .brand-text, .stat-value, .table th {
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ── Glassmorphism Panels ── */
+        .glass-card {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-solid);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,243,255,0.02);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glass-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+            opacity: 0.5;
+        }
+
+        /* ── Sidebar ── */
+        #sidebar {
+            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-w);
+            background: rgba(5, 5, 10, 0.95);
+            border-right: 1px solid var(--border-solid);
+            z-index: 1050;
+            display: flex; flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-logo {
+            padding: 2rem 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-solid);
+            position: relative;
+        }
+        .sidebar-logo .icon-wrapper {
+            font-size: 2.5rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 15px var(--neon-cyan);
+            margin-bottom: 0.5rem;
+        }
+        .sidebar-logo .brand-text {
+            color: #fff; font-size: 1.5rem; font-weight: 700;
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+
+        .sidebar-nav { padding: 1.5rem 1rem; flex: 1; }
+        .nav-link {
+            display: flex; align-items: center; gap: 1rem;
+            color: var(--text-muted); text-decoration: none;
+            padding: 0.8rem 1.2rem; margin-bottom: 0.5rem;
+            border-radius: 4px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem; font-weight: 600;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+        .nav-link:hover {
+            color: var(--neon-cyan);
+            background: rgba(0, 243, 255, 0.05);
+            border-color: rgba(0, 243, 255, 0.2);
+            box-shadow: inset 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+        .nav-link.active {
+            color: #fff;
+            background: rgba(0, 243, 255, 0.1);
+            border-left: 3px solid var(--neon-cyan);
+            box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.15);
+        }
+        .nav-link i { font-size: 1.2rem; }
+
+        /* ── Main Content ── */
+        #main-content {
+            margin-left: var(--sidebar-w);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: rgba(5, 5, 10, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border-solid);
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 900;
+        }
+        
+        .user-pill {
+            display: flex; align-items: center; gap: 0.8rem;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 0.4rem 1rem; border-radius: 30px;
+        }
+        .user-pill .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+        }
+        
+        .content-body { padding: 2rem; }
+
+        /* ── Controls ── */
+        .form-control, .form-select {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            border-radius: 4px;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(0, 0, 0, 0.8);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+            color: #fff;
+        }
+        
+        .btn-hi-tech {
+            background: transparent;
+            color: var(--neon-cyan);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 4px;
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase; font-weight: 600; letter-spacing: 1px;
+            padding: 0.5rem 1.5rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-hi-tech:hover {
+            background: rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+            color: #fff;
+        }
+        
+        .btn-danger-tech {
+            border-color: var(--neon-red); color: var(--neon-red);
+        }
+        .btn-danger-tech:hover {
+            background: rgba(255, 0, 85, 0.1);
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+            color: #fff;
+        }
+
+        /* ── Tables ── */
+        .table { color: var(--text-main); margin-bottom: 0; }
+        .table thead th {
+            background: rgba(0, 243, 255, 0.05);
+            color: var(--neon-cyan);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+            font-size: 0.9rem;
+        }
+        .table tbody td {
+            background: transparent;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+        .table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+        /* Mobile Adjustments */
+        @media (max-width: 991px) {
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.open { transform: translateX(0); }
+            #main-content { margin-left: 0; }
+        }
+        
+        /* Animations */
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+        .scanline-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+            background: linear-gradient(to bottom, transparent, rgba(0,243,255,0.05), transparent);
+            height: 10px; animation: scanline 8s linear infinite;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="scanline-overlay"></div>
+
+    <nav id="sidebar">
+        <div class="sidebar-logo">
+            <div class="icon-wrapper"><i class="bi bi-cpu-fill"></i></div>
+            <div class="brand-text">SYS_RESULT_HUB</div>
+            <div style="font-size: 0.7rem; color: var(--neon-cyan); letter-spacing: 2px; margin-top: 5px;">V 2.0 // ONLINE</div>
+        </div>
+
+        <div class="sidebar-nav">
+            <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-grid-1x2"></i> <span>DASHBOARD</span>
+            </a>
+            {% if user.is_superuser or user.profile.role == 'ADMIN' %}
+            <a href="{% url 'upload' %}" class="nav-link {% if request.resolver_match.url_name == 'upload' %}active{% endif %}">
+                <i class="bi bi-database-up"></i> <span>DATA_IMPORT</span>
+            </a>
+            {% endif %}
+            <a href="{% url 'report' %}?{{ request.GET.urlencode }}" class="nav-link" target="_blank">
+                <i class="bi bi-filetype-pdf"></i> <span>EXPORT_PDF</span>
+            </a>
+            <a href="{% url 'export_csv' %}?{{ request.GET.urlencode }}" class="nav-link">
+                <i class="bi bi-filetype-csv"></i> <span>EXPORT_CSV</span>
+            </a>
+        </div>
+        
+        <div style="padding: 1.5rem 1rem; border-top: 1px solid var(--border-solid);">
+            <a href="{% url 'logout' %}" class="nav-link" style="color: var(--neon-red);">
+                <i class="bi bi-power"></i> <span>SYS_LOGOUT</span>
+            </a>
+        </div>
+    </nav>
+
+    <main id="main-content">
+        <div class="topbar">
+            <button class="btn d-lg-none text-white p-0 border-0 fs-4" id="menuToggle"><i class="bi bi-list"></i></button>
+            <div class="d-none d-lg-block" style="font-family: 'Rajdhani'; color: var(--neon-cyan); letter-spacing: 2px;">
+                {% block page_title %}MAIN_TERMINAL{% endblock %}
+            </div>
+            
+            <div class="user-pill">
+                <div class="status-dot"></div>
+                <div class="text-end" style="line-height: 1.2;">
+                    <div style="font-family: 'Rajdhani'; font-weight: 600; font-size: 1rem; color: #fff;">{{ user.username|upper }}</div>
+                    <div style="font-size: 0.7rem; color: var(--neon-purple); font-weight: 600; letter-spacing: 1px;">AUTH: {{ user.profile.role|default:"USER" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-body">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert bg-panel border border-info text-info alert-dismissible fade show" style="background: rgba(0,243,255,0.1); backdrop-filter: blur(5px);">
+                    <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const menuBtn = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        menuBtn?.addEventListener('click', () => { sidebar.classList.toggle('open'); });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

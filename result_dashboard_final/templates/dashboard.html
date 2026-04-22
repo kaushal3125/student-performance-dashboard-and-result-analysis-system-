@@ -1,0 +1,717 @@
+{% extends 'base.html' %}
+{% block title %}SYS_DASHBOARD // RESULT_HUB{% endblock %}
+{% block page_title %}SYSTEM_OVERVIEW{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+    .chart-wrap { position: relative; height: 320px; }
+    
+    .filter-card {
+        background: rgba(0, 243, 255, 0.02);
+        border: 1px solid rgba(0, 243, 255, 0.2);
+    }
+    
+    .section-title { color: var(--neon-cyan); text-shadow: 0 0 8px rgba(0,243,255,0.4); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; }
+    .section-title span { width: 4px; height: 18px; background: var(--neon-cyan); display: inline-block; box-shadow: 0 0 5px var(--neon-cyan); }
+    
+    .badge-pass { background: rgba(0, 255, 157, 0.1); color: var(--neon-green); border: 1px solid var(--neon-green); box-shadow: 0 0 10px rgba(0, 255, 157, 0.2); padding: 0.2rem 0.8rem; border-radius: 2px; font-family: 'Rajdhani'; font-weight: 600; letter-spacing: 1px; }
+    .badge-fail { background: rgba(255, 0, 85, 0.1); color: var(--neon-red); border: 1px solid var(--neon-red); box-shadow: 0 0 10px rgba(255, 0, 85, 0.2); padding: 0.2rem 0.8rem; border-radius: 2px; font-family: 'Rajdhani'; font-weight: 600; letter-spacing: 1px; }
+    
+    .subject-pct-bar { height: 4px; background: rgba(255,255,255,0.1); overflow: hidden; }
+    .subject-pct-fill { height: 100%; background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); transition: width 0.8s ease; }
+    
+    .stat-card {
+        padding: 1.5rem; border: 1px solid; border-radius: 4px;
+        position: relative; overflow: hidden; background: rgba(0,0,0,0.4);
+    }
+    .stat-card.cyan { border-color: rgba(0, 243, 255, 0.3); }
+    .stat-card.green { border-color: rgba(0, 255, 157, 0.3); }
+    .stat-card.red { border-color: rgba(255, 0, 85, 0.3); }
+    .stat-card.purple { border-color: rgba(181, 0, 255, 0.3); }
+    
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; }
+    .stat-card.cyan::before { background: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
+    .stat-card.green::before { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+    .stat-card.red::before { background: var(--neon-red); box-shadow: 0 0 10px var(--neon-red); }
+    .stat-card.purple::before { background: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); }
+    
+    .stat-icon { position: absolute; right: 1rem; top: 1.5rem; font-size: 2.5rem; opacity: 0.2; }
+    .stat-card.cyan .stat-icon { color: var(--neon-cyan); }
+    .stat-card.green .stat-icon { color: var(--neon-green); }
+    .stat-card.red .stat-icon { color: var(--neon-red); }
+    .stat-card.purple .stat-icon { color: var(--neon-purple); }
+    
+    .rank-badge { font-family: 'Rajdhani'; font-weight: 700; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid; border-radius: 2px; }
+    .rank-1 { color: var(--neon-yellow); border-color: var(--neon-yellow); background: rgba(252, 238, 10, 0.1); box-shadow: 0 0 10px rgba(252, 238, 10, 0.2); }
+    .rank-2 { color: #ccc; border-color: #ccc; background: rgba(204, 204, 204, 0.1); }
+    .rank-3 { color: #d97706; border-color: #d97706; background: rgba(217, 119, 6, 0.1); }
+    .rank-n { color: var(--neon-cyan); border-color: rgba(0, 243, 255, 0.3); }
+
+    .pagination .page-link { background: rgba(0,0,0,0.5); border-color: rgba(0, 243, 255, 0.2); color: var(--neon-cyan); font-family: 'Rajdhani'; border-radius: 2px; margin: 0 2px; }
+    .pagination .page-item.active .page-link { background: var(--neon-cyan); color: #000; border-color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Stat Cards -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card cyan h-100">
+            <i class="bi bi-people stat-icon"></i>
+            <div style="font-family:'Rajdhani'; font-size:0.8rem; color:var(--neon-cyan); letter-spacing:1px;">TOTAL_ENTITIES</div>
+            <div class="stat-value" style="font-size:2.5rem; color:#fff; line-height:1.2;">{{ total }}</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card green h-100">
+            <i class="bi bi-check-circle stat-icon"></i>
+            <div style="font-family:'Rajdhani'; font-size:0.8rem; color:var(--neon-green); letter-spacing:1px;">SYS_PASS_RATE</div>
+            <div class="stat-value" style="font-size:2.5rem; color:#fff; line-height:1.2;">{{ pass_pct }}%</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card red h-100">
+            <i class="bi bi-exclamation-triangle stat-icon"></i>
+            <div style="font-family:'Rajdhani'; font-size:0.8rem; color:var(--neon-red); letter-spacing:1px;">FAIL_RATE</div>
+            <div class="stat-value" style="font-size:2.5rem; color:#fff; line-height:1.2;">{{ fail_pct }}%</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card purple h-100">
+            <i class="bi bi-trophy stat-icon"></i>
+            <div style="font-family:'Rajdhani'; font-size:0.8rem; color:var(--neon-purple); letter-spacing:1px;">ALPHA_NODE</div>
+            <div class="stat-value" style="font-size:1.5rem; color:#fff; line-height:1.2; margin-top:5px;">{{ topper_name }}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted); font-family:'Rajdhani';">SCORE: {{ topper_marks }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="glass-card filter-card mb-4">
+    <form method="GET" class="row g-3">
+        <div class="col-md-3">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" class="form-control" placeholder="QUERY_ID..." value="{{ search_q }}">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select name="semester" class="form-select" onchange="this.form.submit()">
+                <option value="">ALL_SEMS</option>
+                {% for s in all_semesters %}<option value="{{ s }}" {% if sel_semester == s|stringformat:"s" %}selected{% endif %}>SEM_{{ s }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="subject" class="form-select" onchange="this.form.submit()">
+                <option value="">ALL_MODULES</option>
+                {% for sub in all_subjects %}<option value="{{ sub }}" {% if sel_subject == sub %}selected{% endif %}>{{ sub }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="batch" class="form-select" onchange="this.form.submit()">
+                <option value="">ALL_BATCHES</option>
+                {% for b in all_batches %}<option value="{{ b }}" {% if sel_batch == b %}selected{% endif %}>{{ b }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-hi-tech w-100">EXECUTE</button>
+        </div>
+    </form>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="glass-card h-100">
+            <h6 class="section-title"><span></span>MODULE_PERFORMANCE_METRICS</h6>
+            <div class="chart-wrap"><canvas id="subjectChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="glass-card h-100">
+            <h6 class="section-title"><span></span>PASS_FAIL_DISTRIBUTION</h6>
+            <div class="chart-wrap"><canvas id="passFailChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="glass-card h-100">
+            <h6 class="section-title"><span></span>SEMESTER_TREND_ANALYSIS</h6>
+            <div class="chart-wrap"><canvas id="semesterChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="glass-card h-100">
+            <h6 class="section-title"><span></span>TOP_NODES_PERFORMANCE</h6>
+            <div class="chart-wrap"><canvas id="performanceChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 3 -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="glass-card h-100">
+            <h6 class="section-title"><span></span>ALPHA_PER_MODULE (TOP MARKS)</h6>
+            <div class="chart-wrap"><canvas id="topperChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="glass-card h-100">
+            <h6 class="section-title"><span></span>PERFORMANCE_DISTRIBUTION</h6>
+            <div class="chart-wrap"><canvas id="distChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Analytics -->
+<div class="glass-card mb-4">
+    <h6 class="section-title"><span></span>ADVANCED_SUBJECT_ANALYTICS</h6>
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th style="color:var(--text-muted);">SUBJECT</th>
+                    <th style="color:var(--text-muted);">MEDIAN</th>
+                    <th style="color:var(--text-muted);">VARIANCE</th>
+                    <th style="color:var(--text-muted);">STD_DEV</th>
+                    <th style="color:var(--text-muted);">HIGHEST</th>
+                    <th style="color:var(--text-muted);">LOWEST</th>
+                    <th style="color:var(--text-muted);">PASS_%</th>
+                </tr>
+            </thead>
+            <tbody style="font-family:'Rajdhani'; font-size:1.1rem; font-weight:600;">
+                {% for sa in subject_analytics %}
+                <tr>
+                    <td style="color:var(--neon-cyan);">{{ sa.subject }}</td>
+                    <td style="color:#fff; font-weight:bold;">{{ sa.median }}</td>
+                    <td style="color:#fff; font-weight:bold;">{{ sa.variance }}</td>
+                    <td style="color:#fff; font-weight:bold;">{{ sa.std_dev }}</td>
+                    <td style="color:var(--neon-green);">{{ sa.high }}</td>
+                    <td style="color:var(--neon-red);">{{ sa.low }}</td>
+                    <td style="color:var(--neon-yellow);">{{ sa.pass_pct }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="glass-card">
+    <h6 class="section-title"><span></span>ENTITY_DATA_STREAM</h6>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>RANK</th><th>ID_HASH (ROLL)</th><th>DESIGNATION</th>
+                    <th>AVG_OUTPUT</th><th>SYS_RATING</th><th>RECOMMENDED_PATH</th><th>STATUS</th><th>ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in page_obj %}
+                <tr>
+                    <td><div class="rank-badge rank-{% if row.rank <= 3 %}{{ row.rank }}{% else %}n{% endif %}">{{ row.rank }}</div></td>
+                    <td><code style="color:var(--neon-purple);">{{ row.roll_no }}</code></td>
+                    <td style="font-family:'Rajdhani'; font-weight:700; font-size:1.1rem; letter-spacing:1px; color:#ffffff; text-shadow:0 0 8px rgba(255,255,255,0.4);">{{ row.name|upper }}</td>
+                    <td style="color:var(--neon-cyan);">{{ row.avg }}</td>
+                    <td style="min-width:150px;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="subject-pct-bar flex-grow-1">
+                                <div class="subject-pct-fill" style="width:{{ row.percentage }}%; background: {% if row.percentage >= 60 %}var(--neon-green){% elif row.percentage >= 40 %}var(--neon-yellow){% else %}var(--neon-red){% endif %}; box-shadow: 0 0 8px {% if row.percentage >= 60 %}var(--neon-green){% elif row.percentage >= 40 %}var(--neon-yellow){% else %}var(--neon-red){% endif %};"></div>
+                            </div>
+                            <span style="font-family:'Rajdhani'; font-weight:600; font-size:0.9rem;">{{ row.percentage }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-family:'Rajdhani'; font-size:0.9rem; font-weight:bold; color:var(--neon-purple);">{{ row.career_recommendation|upper }}</span>
+                    </td>
+                    <td>
+                        {% if row.status == 'Pass' %}
+                        <span class="badge-pass">OPTIMAL</span>
+                        {% else %}
+                        <span class="badge-fail">CRITICAL</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-hi-tech btn-sm py-1 px-2" style="font-size:0.75rem;" onclick="viewDetails('{{ row.name|escapejs }}', '{{ row.roll_no|escapejs }}', {{ row.subjects_json }}, '{{ row.career_recommendation|escapejs }}', '{{ row.strengths|join:', '|escapejs }}', '{{ row.weaknesses|join:', '|escapejs }}', '{{ row.focus_topics|escapejs }}', '{{ row.interview_questions|escapejs }}')">
+                            <i class="bi bi-eye me-1"></i>MODULES
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center py-4" style="color:var(--neon-red); font-family:'Rajdhani';">NO_DATA_FOUND</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ query_string }}"><i class="bi bi-chevron-left"></i></a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ query_string }}"><i class="bi bi-chevron-right"></i></a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Comparison Module -->
+<div class="glass-card mt-4 mb-4" id="compareSection">
+    <h6 class="section-title"><span></span>MULTI_NODE_COMPARISON</h6>
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label style="color:var(--text-muted); font-size:0.8rem;">NODE A</label>
+            <select id="compStudentA" class="form-select mb-2" style="background:rgba(0,0,0,0.5); border:1px solid rgba(0,243,255,0.2); color:var(--neon-cyan);" onchange="updateSubjects('A')"></select>
+            <select id="compSubjectA" class="form-select" style="background:rgba(0,0,0,0.5); border:1px solid rgba(0,243,255,0.2); color:var(--neon-purple);">
+                <option value="ALL">ALL MODULES</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label style="color:var(--text-muted); font-size:0.8rem;">NODE B</label>
+            <select id="compStudentB" class="form-select mb-2" style="background:rgba(0,0,0,0.5); border:1px solid rgba(0,243,255,0.2); color:var(--neon-cyan);" onchange="updateSubjects('B')"></select>
+            <select id="compSubjectB" class="form-select" style="background:rgba(0,0,0,0.5); border:1px solid rgba(0,243,255,0.2); color:var(--neon-purple);">
+                <option value="ALL">ALL MODULES</option>
+            </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button class="btn btn-hi-tech w-100" style="height: 40px;" onclick="runComparison()">EXECUTE_COMPARISON</button>
+        </div>
+    </div>
+    <div class="row g-4" id="comparisonChartsRow" style="display:none;">
+        <div class="col-lg-6">
+            <div class="glass-card" style="background:rgba(0,0,0,0.2);">
+                <div class="chart-wrap"><canvas id="compareBarChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="glass-card" style="background:rgba(0,0,0,0.2);">
+                <div class="chart-wrap"><canvas id="compareRadarChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="background:var(--bg-panel); backdrop-filter:blur(15px); border:1px solid var(--neon-cyan); box-shadow:0 0 20px rgba(0,243,255,0.2);">
+      <div class="modal-header border-bottom" style="border-color:rgba(0,243,255,0.3)!important;">
+        <h5 class="modal-title section-title mb-0" id="modalStudentName" style="color:#fff; text-shadow:0 0 10px rgba(255,255,255,0.5);">STUDENT_DETAILS</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <h6 style="color:var(--neon-purple); font-family:'Rajdhani'; letter-spacing:1px; margin-bottom:1rem;"><i class="bi bi-list-check me-2"></i>MODULE_BREAKDOWN</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless" id="modalSubjectsTable">
+                        <thead style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <tr><th style="color:var(--text-muted); font-size:0.8rem;">SUBJECT</th><th style="color:var(--neon-cyan); font-size:0.8rem;">MARKS</th></tr>
+                        </thead>
+                        <tbody style="font-family:'Rajdhani'; font-weight:600; font-size:1.1rem;">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6 style="color:var(--neon-purple); font-family:'Rajdhani'; letter-spacing:1px; margin-bottom:1rem;"><i class="bi bi-radar me-2"></i>VISUAL_METRICS</h6>
+                <div style="position:relative; height:220px;">
+                    <canvas id="modalChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="col-12 mt-2">
+                <h6 style="color:var(--neon-purple); font-family:'Rajdhani'; letter-spacing:1px; margin-bottom:1rem;"><i class="bi bi-cpu me-2"></i>AI_INSIGHTS</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div style="background:rgba(0,243,255,0.05); border:1px solid rgba(0,243,255,0.2); padding:1rem; border-radius:4px; height:100%;">
+                            <div style="font-size:0.8rem; color:var(--text-muted);">RECOMMENDED PATH</div>
+                            <div id="modalCareer" style="color:var(--neon-cyan); font-family:'Rajdhani'; font-weight:700; font-size:1.1rem; margin-top:5px;"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div style="background:rgba(0,255,157,0.05); border:1px solid rgba(0,255,157,0.2); padding:1rem; border-radius:4px; height:100%;">
+                            <div style="font-size:0.8rem; color:var(--text-muted);">STRENGTHS</div>
+                            <div id="modalStrengths" style="color:var(--neon-green); font-family:'Rajdhani'; font-weight:700; font-size:1.1rem; margin-top:5px;"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div style="background:rgba(255,0,85,0.05); border:1px solid rgba(255,0,85,0.2); padding:1rem; border-radius:4px; height:100%;">
+                            <div style="font-size:0.8rem; color:var(--text-muted);">AREAS TO IMPROVE</div>
+                            <div id="modalWeaknesses" style="color:var(--neon-red); font-family:'Rajdhani'; font-weight:700; font-size:1.1rem; margin-top:5px;"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mt-3">
+                        <div style="background:rgba(252,238,10,0.05); border:1px solid rgba(252,238,10,0.2); padding:1rem; border-radius:4px; height:100%;">
+                            <div style="font-size:0.8rem; color:var(--text-muted);"><i class="bi bi-bullseye me-1"></i>FOCUS TOPICS</div>
+                            <div id="modalTopics" style="color:var(--neon-yellow); font-family:'Rajdhani'; font-weight:600; font-size:1rem; margin-top:5px;"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mt-3">
+                        <div style="background:rgba(181,0,255,0.05); border:1px solid rgba(181,0,255,0.2); padding:1rem; border-radius:4px; height:100%;">
+                            <div style="font-size:0.8rem; color:var(--text-muted);"><i class="bi bi-chat-left-text me-1"></i>INTERVIEW PREP</div>
+                            <div id="modalQuestions" style="color:var(--neon-purple); font-family:'Rajdhani'; font-weight:600; font-size:1rem; margin-top:5px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+Chart.defaults.color = '#8a96a8';
+Chart.defaults.font.family = 'Rajdhani';
+
+const subjectLabels = {{ subject_labels_json|safe }};
+const subjectAvgs   = {{ subject_avgs_json|safe }};
+const passFailData  = {{ pass_fail_json|safe }};
+const semLabels     = {{ sem_labels_json|safe }};
+const semData       = {{ sem_data_json|safe }};
+const perfLabels    = {{ line_labels_json|safe }};
+const perfData      = {{ line_data_json|safe }};
+
+const topperLabels  = {{ topper_labels_json|safe }};
+const topperData    = {{ topper_data_json|safe }};
+const distLabels    = {{ dist_labels_json|safe }};
+const distData      = {{ dist_data_json|safe }};
+const allStudents   = {{ all_students_json|safe }};
+const scatterData   = {{ scatter_data_json|safe }};
+
+const baseOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 13, weight: 'bold' } } },
+        tooltip: { backgroundColor: 'rgba(5, 5, 10, 0.9)', titleColor: '#00f3ff', borderColor: 'rgba(0, 243, 255, 0.3)', borderWidth: 1, padding: 10, cornerRadius: 4 }
+    },
+    scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' } }
+    }
+};
+
+new Chart(document.getElementById('subjectChart'), {
+    type: 'bar',
+    data: {
+        labels: subjectLabels,
+        datasets: [{
+            label: 'AVG_SCORE', data: subjectAvgs,
+            backgroundColor: 'rgba(0, 243, 255, 0.2)', borderColor: '#00f3ff',
+            borderWidth: 1, hoverBackgroundColor: 'rgba(0, 243, 255, 0.5)'
+        }]
+    },
+    options: { ...baseOpts, scales: { ...baseOpts.scales, y: { ...baseOpts.scales.y, max: 100 } } }
+});
+
+new Chart(document.getElementById('passFailChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['OPTIMAL', 'CRITICAL'],
+        datasets: [{
+            data: passFailData,
+            backgroundColor: ['rgba(0, 255, 157, 0.5)', 'rgba(255, 0, 85, 0.5)'],
+            borderColor: ['#00ff9d', '#ff0055'], borderWidth: 1
+        }]
+    },
+    options: { ...baseOpts, scales: { x: {display: false}, y: {display: false} } }
+});
+
+new Chart(document.getElementById('semesterChart'), {
+    type: 'line',
+    data: {
+        labels: semLabels,
+        datasets: [{
+            label: 'TREND', data: semData,
+            borderColor: '#b500ff', backgroundColor: 'rgba(181, 0, 255, 0.1)',
+            fill: true, tension: 0, pointBackgroundColor: '#000', pointBorderColor: '#b500ff', pointBorderWidth: 2
+        }]
+    },
+    options: baseOpts
+});
+
+new Chart(document.getElementById('performanceChart'), {
+    type: 'line',
+    data: {
+        labels: perfLabels,
+        datasets: [{
+            label: 'SCORE', data: perfData,
+            borderColor: '#00ff9d', backgroundColor: 'rgba(0, 255, 157, 0.05)',
+            fill: true, tension: 0.2, pointBackgroundColor: '#000', pointBorderColor: '#00ff9d'
+        }]
+    },
+    options: baseOpts
+});
+
+new Chart(document.getElementById('topperChart'), {
+    type: 'bar',
+    data: {
+        labels: topperLabels,
+        datasets: [{
+            label: 'MAX_SCORE', data: topperData,
+            backgroundColor: 'rgba(252, 238, 10, 0.2)', borderColor: '#fcee0a',
+            borderWidth: 1, hoverBackgroundColor: 'rgba(252, 238, 10, 0.5)'
+        }]
+    },
+    options: { ...baseOpts, scales: { ...baseOpts.scales, y: { ...baseOpts.scales.y, max: 100 } } }
+});
+
+new Chart(document.getElementById('distChart'), {
+    type: 'bar',
+    data: {
+        labels: distLabels,
+        datasets: [{
+            label: 'STUDENT_COUNT', data: distData,
+            backgroundColor: 'rgba(181, 0, 255, 0.2)', borderColor: '#b500ff',
+            borderWidth: 1, hoverBackgroundColor: 'rgba(181, 0, 255, 0.5)'
+        }]
+    },
+    options: { ...baseOpts, scales: { ...baseOpts.scales, y: { ...baseOpts.scales.y, suggestedMax: 10 } } }
+});
+
+new Chart(document.getElementById('scatterChart'), {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            label: 'NODES',
+            data: scatterData,
+            backgroundColor: 'rgba(0, 243, 255, 0.5)',
+            borderColor: '#00f3ff',
+            pointRadius: 6, pointHoverRadius: 10
+        }]
+    },
+    options: {
+        ...baseOpts,
+        plugins: {
+            ...baseOpts.plugins,
+            tooltip: {
+                ...baseOpts.plugins.tooltip,
+                callbacks: {
+                    label: function(ctx) { return ctx.raw.name + ' (Avg: ' + ctx.raw.x + ', %: ' + ctx.raw.y + ')'; }
+                }
+            }
+        },
+        scales: {
+            x: { title: { display: true, text: 'AVG_OUTPUT', color: '#8a96a8' } },
+            y: { title: { display: true, text: 'SYS_RATING (%)', color: '#8a96a8' }, min: 0, max: 100 }
+        }
+    }
+});
+
+let modalChartInst = null;
+function viewDetails(name, roll, subjects, career, strengths, weaknesses, topics, questions) {
+    document.getElementById('modalStudentName').textContent = name.toUpperCase() + ' // ' + roll;
+    
+    document.getElementById('modalCareer').textContent = career;
+    document.getElementById('modalStrengths').textContent = strengths || "N/A";
+    document.getElementById('modalWeaknesses').textContent = weaknesses || "N/A";
+    document.getElementById('modalTopics').textContent = topics || "N/A";
+    document.getElementById('modalQuestions').textContent = questions || "N/A";
+    
+    let tbody = document.getElementById('modalSubjectsTable').querySelector('tbody');
+    tbody.innerHTML = '';
+    
+    let labels = [];
+    let dataMarks = [];
+    let colors = [];
+    
+    subjects.forEach(s => {
+        let pct = (s.marks / s.max) * 100;
+        let color = pct >= 60 ? 'var(--neon-green)' : (pct >= 40 ? 'var(--neon-yellow)' : 'var(--neon-red)');
+        
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td>${s.subject}</td><td style="color:${color};">${s.marks}/${s.max}</td>`;
+        tbody.appendChild(tr);
+        
+        labels.push(s.subject);
+        dataMarks.push(s.marks);
+        colors.push(color);
+    });
+    
+    if(modalChartInst) modalChartInst.destroy();
+    
+    modalChartInst = new Chart(document.getElementById('modalChart'), {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'MARKS',
+                data: dataMarks,
+                backgroundColor: 'rgba(0, 243, 255, 0.2)',
+                borderColor: '#00f3ff',
+                pointBackgroundColor: colors,
+                pointBorderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                r: { 
+                    angleLines: { color: 'rgba(255,255,255,0.1)' },
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    pointLabels: { color: '#8a96a8', font: {family:'Rajdhani', size: 11} },
+                    ticks: { display: false, max: 100, min: 0 }
+                }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+    
+    new bootstrap.Modal(document.getElementById('detailsModal')).show();
+}
+
+// Comparison Feature Logic
+function updateSubjects(nodeId) {
+    const roll = document.getElementById('compStudent' + nodeId).value;
+    const subSel = document.getElementById('compSubject' + nodeId);
+    subSel.innerHTML = '<option value="ALL">ALL MODULES</option>';
+    
+    let st = allStudents.find(x => x.roll_no === roll);
+    if (st && st.subjects) {
+        st.subjects.forEach(s => {
+            let opt = document.createElement('option');
+            opt.value = s.name;
+            opt.textContent = s.name;
+            subSel.appendChild(opt);
+        });
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    const selA = document.getElementById('compStudentA');
+    const selB = document.getElementById('compStudentB');
+    
+    if (selA && selB && allStudents.length > 0) {
+        allStudents.forEach(st => {
+            let optA = document.createElement('option'); optA.value = st.roll_no; optA.textContent = st.name;
+            let optB = document.createElement('option'); optB.value = st.roll_no; optB.textContent = st.name;
+            selA.appendChild(optA); selB.appendChild(optB);
+        });
+        
+        // Default to second student for B if available
+        if(allStudents.length > 1) selB.selectedIndex = 1;
+        
+        // Populate subjects
+        updateSubjects('A');
+        updateSubjects('B');
+    }
+});
+
+let compBarInst = null;
+let compRadarInst = null;
+
+function runComparison() {
+    const rollA = document.getElementById('compStudentA').value;
+    const rollB = document.getElementById('compStudentB').value;
+    const subA = document.getElementById('compSubjectA').value;
+    const subB = document.getElementById('compSubjectB').value;
+    
+    if (!rollA || !rollB) return;
+    if (rollA === rollB) { alert("Please select two different nodes to compare."); return; }
+    
+    document.getElementById('comparisonChartsRow').style.display = 'flex';
+    
+    let stA = allStudents.find(x => x.roll_no === rollA);
+    let stB = allStudents.find(x => x.roll_no === rollB);
+    
+    let isAllMode = (subA === 'ALL' && subB === 'ALL');
+    
+    let labelsBar = [];
+    let dataBarA = [];
+    let dataBarB = [];
+    let commonLabels = [];
+    
+    if (isAllMode) {
+        // Compare all subjects using commonLabels for Radar Chart
+        commonLabels = stA.subjects.map(s => s.name);
+        document.getElementById('compareRadarChart').parentElement.parentElement.style.display = 'block';
+        
+        commonLabels.forEach(lbl => {
+            let sA = stA.subjects.find(s => s.name === lbl);
+            let sB = stB.subjects.find(s => s.name === lbl);
+            labelsBar.push(lbl);
+            dataBarA.push(sA ? sA.marks : 0);
+            dataBarB.push(sB ? sB.marks : 0);
+        });
+    } else {
+        // Compare specific subjects (Hide Radar)
+        document.getElementById('compareRadarChart').parentElement.parentElement.style.display = 'none';
+        
+        let labelA = subA === 'ALL' ? 'Average' : subA;
+        let labelB = subB === 'ALL' ? 'Average' : subB;
+        labelsBar = [stA.name + ' (' + labelA + ')', stB.name + ' (' + labelB + ')'];
+        
+        let scoreA = 0;
+        if (subA === 'ALL') {
+            scoreA = stA.percentage;
+        } else {
+            let s = stA.subjects.find(x => x.name === subA);
+            if (s) scoreA = s.marks;
+        }
+        
+        let scoreB = 0;
+        if (subB === 'ALL') {
+            scoreB = stB.percentage;
+        } else {
+            let s = stB.subjects.find(x => x.name === subB);
+            if (s) scoreB = s.marks;
+        }
+        
+        dataBarA = [scoreA, 0];
+        dataBarB = [0, scoreB];
+    }
+    
+    let datasetsBar = [
+        { label: stA.name, data: dataBarA, backgroundColor: 'rgba(0,243,255,0.3)', borderColor: '#00f3ff', borderWidth: 1 },
+        { label: stB.name, data: dataBarB, backgroundColor: 'rgba(181,0,255,0.3)', borderColor: '#b500ff', borderWidth: 1 }
+    ];
+    
+    if (compBarInst) compBarInst.destroy();
+    if (compRadarInst) compRadarInst.destroy();
+    
+    compBarInst = new Chart(document.getElementById('compareBarChart'), {
+        type: 'bar',
+        data: { labels: labelsBar, datasets: datasetsBar },
+        options: { ...baseOpts, scales: { ...baseOpts.scales, y: { ...baseOpts.scales.y, max: 100 } }, plugins: { ...baseOpts.plugins, title: {display: true, text: isAllMode ? 'MODULE_WISE_COMPARISON' : 'SPECIFIC_MODULE_COMPARISON', color: '#fff'} } }
+    });
+    
+    if (isAllMode) {
+        let datasetsRadar = [
+            { label: stA.name, data: dataBarA, backgroundColor: 'rgba(0,243,255,0.2)', borderColor: '#00f3ff', borderWidth: 2, pointBackgroundColor: '#00f3ff' },
+            { label: stB.name, data: dataBarB, backgroundColor: 'rgba(181,0,255,0.2)', borderColor: '#b500ff', borderWidth: 2, pointBackgroundColor: '#b500ff' }
+        ];
+        compRadarInst = new Chart(document.getElementById('compareRadarChart'), {
+            type: 'radar',
+            data: { labels: commonLabels, datasets: datasetsRadar },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    r: { 
+                        angleLines: { color: 'rgba(255,255,255,0.1)' },
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        pointLabels: { color: '#8a96a8', font: {family:'Rajdhani', size: 12} },
+                        ticks: { display: false, max: 100, min: 0 }
+                    }
+                },
+                plugins: { ...baseOpts.plugins, title: {display: true, text: 'SYS_RATING_OVERLAY', color: '#fff'} }
+            }
+        });
+    }
+    
+    document.getElementById('compareSection').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

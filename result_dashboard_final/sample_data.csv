@@ -1,0 +1,49 @@
+name,roll_no,subject,marks,semester,batch
+Rohan Sharma,MCA001,DBMS,78,1,2023-25
+Rohan Sharma,MCA001,Python,85,1,2023-25
+Rohan Sharma,MCA001,Data Structures,72,1,2023-25
+Rohan Sharma,MCA001,Web Technology,90,2,2023-25
+Priya Singh,MCA002,DBMS,65,1,2023-25
+Priya Singh,MCA002,Python,92,1,2023-25
+Priya Singh,MCA002,Data Structures,58,1,2023-25
+Priya Singh,MCA002,Web Technology,88,2,2023-25
+Amit Verma,MCA003,DBMS,45,1,2023-25
+Amit Verma,MCA003,Python,35,1,2023-25
+Amit Verma,MCA003,Data Structures,42,1,2023-25
+Amit Verma,MCA003,Web Technology,55,2,2023-25
+Sneha Patel,MCA004,DBMS,91,1,2023-25
+Sneha Patel,MCA004,Python,88,1,2023-25
+Sneha Patel,MCA004,Data Structures,95,1,2023-25
+Sneha Patel,MCA004,Web Technology,82,2,2023-25
+Rahul Kumar,MCA005,DBMS,30,1,2024-26
+Rahul Kumar,MCA005,Python,28,1,2024-26
+Rahul Kumar,MCA005,Data Structures,35,1,2024-26
+Rahul Kumar,MCA005,Web Technology,40,2,2024-26
+Neha Gupta,MCA006,DBMS,76,1,2024-26
+Neha Gupta,MCA006,Python,81,1,2024-26
+Neha Gupta,MCA006,Data Structures,69,1,2024-26
+Neha Gupta,MCA006,Web Technology,74,2,2024-26
+Vikram Joshi,MCA007,DBMS,55,1,2024-26
+Vikram Joshi,MCA007,Python,62,1,2024-26
+Vikram Joshi,MCA007,Data Structures,48,1,2024-26
+Vikram Joshi,MCA007,Web Technology,50,2,2024-26
+Ananya Mishra,MCA008,DBMS,88,1,2024-26
+Ananya Mishra,MCA008,Python,94,1,2024-26
+Ananya Mishra,MCA008,Data Structures,82,1,2024-26
+Ananya Mishra,MCA008,Web Technology,91,2,2024-26
+Kunal Gupta,MCA009,DBMS,100,1,2024-26
+Kunal Gupta,MCA009,Python,100,1,2024-26
+Kunal Gupta,MCA009,Data Structures,100,1,2024-26
+Kunal Gupta,MCA009,Web Technology,100,2,2024-26
+Kaushal Kumar,MCA010,DBMS,25,1,2024-26
+Kaushal Kumar,MCA010,Python,30,1,2024-26
+Kaushal Kumar,MCA010,Data Structures,20,1,2024-26
+Kaushal Kumar,MCA010,Web Technology,22,2,2024-26
+Vaani Rana,MCA011,DBMS,85,1,2024-26
+Vaani Rana,MCA011,Python,88,1,2024-26
+Vaani Rana,MCA011,Data Structures,90,1,2024-26
+Vaani Rana,MCA011,Web Technology,92,2,2024-26
+Prabhjyot Singh,MCA012,DBMS,65,1,2024-26
+Prabhjyot Singh,MCA012,Python,68,1,2024-26
+Prabhjyot Singh,MCA012,Data Structures,70,1,2024-26
+Prabhjyot Singh,MCA012,Web Technology,66,2,2024-26

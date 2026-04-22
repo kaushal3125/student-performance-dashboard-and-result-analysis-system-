@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}SYS_IMPORT // RESULT_HUB{% endblock %}
+{% block page_title %}DATA_IMPORT_TERMINAL{% endblock %}
+
+{% block extra_head %}
+<style>
+    .upload-zone {
+        border: 1px dashed var(--neon-cyan);
+        background: rgba(0, 243, 255, 0.02);
+        border-radius: 4px; padding: 4rem 2rem;
+        text-align: center;
+        transition: all 0.3s; cursor: pointer; position: relative;
+    }
+    .upload-zone:hover, .upload-zone.dragging {
+        background: rgba(0, 243, 255, 0.05);
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(0, 243, 255, 0.1);
+    }
+    .upload-icon { font-size: 3.5rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); margin-bottom: 1rem; display: block; }
+    
+    .format-chip {
+        display: inline-block;
+        background: rgba(0,0,0,0.5);
+        color: var(--neon-purple); border: 1px solid rgba(181, 0, 255, 0.3);
+        border-radius: 2px; padding: 0.2rem 0.5rem;
+        font-family: 'Rajdhani', monospace; font-size: 0.85rem; margin: 2px;
+    }
+    
+    .preview-box {
+        background: rgba(0, 255, 157, 0.05);
+        border: 1px solid rgba(0, 255, 157, 0.3);
+        border-radius: 4px; padding: 1rem 1.5rem;
+        display: none; align-items: center; justify-content: space-between;
+        margin-top: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-8">
+        
+        <div class="glass-card mb-4">
+            <h5 class="section-title text-uppercase" style="color:var(--neon-cyan); text-shadow:0 0 5px var(--neon-cyan); font-family:'Rajdhani';"><i class="bi bi-cloud-upload me-2"></i>INITIALIZE_DATA_TRANSFER</h5>
+            
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                {% csrf_token %}
+                
+                <div class="upload-zone" id="dropZone" onclick="document.getElementById('csvFileInput').click()">
+                    <i class="bi bi-filetype-csv upload-icon"></i>
+                    <h5 style="font-family:'Rajdhani'; color:#fff; letter-spacing:1px;">AWAITING_FILE_INPUT</h5>
+                    <p style="color:var(--text-muted); font-size:0.9rem;">CLICK OR DRAG CSV FILE HERE</p>
+                    <input type="file" name="file" id="csvFileInput" accept=".csv" class="d-none" required>
+                </div>
+
+                <div class="preview-box" id="filePreview">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="bi bi-file-earmark-check fs-2" style="color:var(--neon-green); text-shadow:0 0 5px var(--neon-green);"></i>
+                        <div>
+                            <div id="previewName" style="color:#fff; font-family:'Rajdhani'; font-weight:600; font-size:1.1rem; letter-spacing:1px;">data.csv</div>
+                            <div id="previewSize" style="color:var(--text-muted); font-size:0.8rem;">0 KB</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-hi-tech btn-danger-tech px-3 py-1" onclick="resetFile()"><i class="bi bi-x"></i> ABORT</button>
+                </div>
+
+                <div class="mt-4 p-3" style="background:rgba(252, 238, 10, 0.05); border:1px solid rgba(252, 238, 10, 0.3); border-radius:4px;">
+                    <div class="d-flex gap-2">
+                        <i class="bi bi-exclamation-triangle" style="color:var(--neon-yellow); text-shadow:0 0 5px var(--neon-yellow);"></i>
+                        <div>
+                            <div style="color:var(--neon-yellow); font-family:'Rajdhani'; font-weight:600; letter-spacing:1px;">FORMAT_REQUIREMENTS</div>
+                            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.5rem;">Headers must match exact schema parameters:</div>
+                            <div>
+                                <span class="format-chip">name</span>
+                                <span class="format-chip">roll_no</span>
+                                <span class="format-chip">subject</span>
+                                <span class="format-chip">marks</span>
+                                <span class="format-chip">semester</span>
+                                <span class="format-chip">batch</span>
+                                <span class="format-chip" style="border-color:rgba(255,255,255,0.1); color:var(--text-muted);">max_marks (opt)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-hi-tech w-100 mt-4" id="submitBtn" style="font-size:1.2rem; padding:0.8rem;">
+                    <i class="bi bi-lightning-charge me-2"></i>EXECUTE_UPLOAD
+                </button>
+            </form>
+        </div>
+
+        <div class="glass-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 style="color:var(--neon-purple); font-family:'Rajdhani'; font-size:1.1rem; margin:0;"><i class="bi bi-table me-2"></i>SCHEMA_REFERENCE</h6>
+                <a href="{% url 'download_sample' %}" class="btn-hi-tech px-3 py-1" style="font-size:0.8rem; border-color:var(--neon-purple); color:var(--neon-purple);">
+                    <i class="bi bi-download me-1"></i>GET_TEMPLATE
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm text-center">
+                    <thead>
+                        <tr><th>name</th><th>roll_no</th><th>subject</th><th>marks</th><th>semester</th><th>batch</th></tr>
+                    </thead>
+                    <tbody style="color:var(--neon-cyan); font-family:'Rajdhani'; font-size:1rem; font-weight:600;">
+                        <tr><td>Kunal Gupta</td><td>MCA009</td><td>Python</td><td>100</td><td>1</td><td>2024-26</td></tr>
+                        <tr><td>Vaani Rana</td><td>MCA011</td><td>DBMS</td><td>85</td><td>1</td><td>2024-26</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('csvFileInput');
+const previewBox = document.getElementById('filePreview');
+const previewName = document.getElementById('previewName');
+const previewSize = document.getElementById('previewSize');
+
+['dragenter','dragover','dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); }));
+['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.add('dragging')));
+['dragleave','drop'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.remove('dragging')));
+
+dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+fileInput.addEventListener('change', function() { handleFiles(this.files); });
+
+function handleFiles(files) {
+    if (!files.length) return;
+    const file = files[0];
+    if (!file.name.endsWith('.csv')) { alert('INVALID_FORMAT_EXPECTED_.CSV'); return; }
+    previewName.textContent = file.name;
+    previewSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+    dropZone.style.display = 'none';
+    previewBox.style.display = 'flex';
+}
+
+function resetFile() {
+    fileInput.value = '';
+    dropZone.style.display = 'block';
+    previewBox.style.display = 'none';
+}
+
+document.getElementById('uploadForm').addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = 'PROCESSING_DATASTREAM...';
+});
+</script>
+{% endblock %}
