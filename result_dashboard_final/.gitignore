@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Django
+*.log
+local_settings.py
+# NOTE: db.sqlite3 is intentionally NOT ignored so Vercel can use it
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
